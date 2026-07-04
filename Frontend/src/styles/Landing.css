@@ -1,0 +1,240 @@
+
+.landing-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #111827;
+}
+
+.landing-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 80px;
+    height: 72px;
+    background: #1e3a5f;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.landing-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.landing-nav-logo {
+    width: 44px;
+    height: 44px;
+    background: #2563eb;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.landing-nav-name {
+    display: block;
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.landing-nav-tagline {
+    display: block;
+    font-size: 11px;
+    color: #93c5fd;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+}
+
+.landing-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.landing-nav-login {
+    padding: 9px 22px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+
+.landing-nav-login:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.5);
+}
+
+.landing-nav-register {
+    padding: 9px 22px;
+    background: #2563eb;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+}
+
+.landing-nav-register:hover { background: #1d4ed8; }
+
+.landing-hero {
+    flex: 1;
+    text-align: center;
+    padding: 100px 80px 80px;
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 60%);
+}
+
+.landing-hero-badge {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 18px;
+    border-radius: 999px;
+    margin-bottom: 32px;
+    border: 1px solid #bfdbfe;
+}
+
+.landing-hero-title {
+    font-size: 54px;
+    font-weight: 900;
+    line-height: 1.15;
+    color: #111827;
+    margin: 0 0 24px;
+    letter-spacing: -0.02em;
+}
+
+.landing-hero-highlight {
+    color: #2563eb;
+}
+
+.landing-hero-subtitle {
+    font-size: 18px;
+    color: #6b7280;
+    max-width: 600px;
+    margin: 0 auto 44px;
+    line-height: 1.7;
+}
+
+.landing-hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+}
+
+.landing-btn-primary {
+    padding: 14px 32px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.landing-btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.landing-btn-secondary {
+    padding: 14px 32px;
+    background: white;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+
+.landing-btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.landing-footer {
+    background: #1e3a5f;
+    padding: 28px 80px;
+}
+
+.landing-footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.landing-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.landing-footer-logo {
+    width: 38px;
+    height: 38px;
+    background: #2563eb;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.landing-footer-name {
+    margin: 0 0 2px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.landing-footer-sub {
+    margin: 0;
+    font-size: 12px;
+    color: #93c5fd;
+}
+
+.landing-footer-info {
+    text-align: right;
+}
+
+.landing-footer-info p {
+    margin: 3px 0;
+    font-size: 13px;
+    color: #93c5fd;
+}
+
+@media (max-width: 768px) {
+    .landing-nav    { padding: 0 24px; }
+    .landing-hero   { padding: 60px 24px; }
+    .landing-hero-title { font-size: 32px; }
+    .landing-hero-actions { flex-direction: column; align-items: center; }
+    .landing-footer { padding: 24px; }
+    .landing-footer-inner { flex-direction: column; gap: 16px; text-align: center; }
+    .landing-footer-info { text-align: center; }
+}

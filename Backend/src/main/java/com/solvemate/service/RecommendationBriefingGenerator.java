@@ -7,8 +7,8 @@ import com.solvemate.model.Solvent;
 import org.springframework.stereotype.Component;
 
 /**
- * Generates expert laboratory decision-support narratives for each recommendation.
- * Every section explains WHY a factor matters and HOW it affects lab work — not just WHAT the label is.
+ * Generates concise laboratory decision-support briefings.
+ * Each section is 1–2 sentences: why it matters and what to do.
  */
 @Component
 public class RecommendationBriefingGenerator {
@@ -28,38 +28,34 @@ public class RecommendationBriefingGenerator {
         b.setHealthSafetyAssessment(healthSafetySection(solvent));
         b.setEnvironmentalImpactAssessment(environmentalSection(solvent));
         b.setRegulatoryComplianceAssessment(regulatorySection(solvent));
-        b.setCostPracticalityAssessment(costSection(solvent));
+        b.setCostPracticalityAssessment(practicalitySection(solvent, red, recommendationType));
         b.setOverallRecommendation(overallSection(polymer, solvent, probability, red, recommendationType, rankPosition));
-        b.setSaferAlternative(saferAlternativeSection(solvent, saferAlternative, probability, recommendationType));
+        b.setSaferAlternative(saferAlternativeSection(solvent, saferAlternative, recommendationType));
         return b;
     }
 
     private String compatibilitySection(Polymer polymer, Solvent solvent,
                                         double probability, double red, double ra, String type) {
-        String name = solvent.getName();
-        String polymerName = polymer.getPolymerName();
         int mlPct = (int) Math.round(probability * 100);
 
-        String redInterpretation;
-        if (red < 0.8) {
-            redInterpretation = "well within the compatible range, indicating strong Hansen parameter alignment between solvent and polymer";
-        } else if (red < 1.0) {
-            redInterpretation = "below the critical threshold of 1.0, suggesting the solvent should dissolve or swell this polymer under typical laboratory conditions";
-        } else if (red < 1.5) {
-            redInterpretation = "in the borderline zone (1.0–1.5), meaning partial dissolution or swelling is possible but not reliably predictable — trial validation is essential";
-        } else {
-            redInterpretation = "above 1.5, which Hansen theory treats as incompatible — the chemical distance between solvent and polymer is too large for reliable dissolution";
+        String redNote;
+        if (red < 1.0)      redNote = "Hansen-compatible (RED < 1.0)";
+        else if (red < 1.5) redNote = "borderline (RED 1.0–1.5) — validate in a trial";
+        else                redNote = "Hansen-incompatible (RED > 1.5)";
+
+        if ("NOT_RECOMMENDED".equals(type)) {
+            return String.format(
+                    "%s vs %s: %s, ML %d%%. Poor match — use a top-ranked solvent instead.",
+                    solvent.getName(), polymer.getPolymerName(), redNote, mlPct
+            );
         }
 
-        String mlNote = type.equals("NOT_RECOMMENDED")
-                ? String.format("The machine learning model assigns only %d%% confidence to this pairing, ranking it among the poorest matches in the catalog.", mlPct)
-                : String.format("The machine learning model assigns %d%% confidence to this pairing based on Hansen parameters, molar volume, and historical compatibility patterns from 27,000+ polymer–solvent records.", mlPct);
-
         return String.format(
-                "%s was evaluated against %s using Hansen Solubility Parameters. The RED index is %.2f — %s. " +
-                "The overall chemical distance (Ra = %.1f) reflects how closely the solvent's dispersion, polarity, and hydrogen-bonding characteristics match the polymer. %s " +
-                "In practice, a low RED with strong ML confidence means you can proceed to a small-scale dissolution trial with reasonable expectation of success; a high RED means time and material are better spent on higher-ranked alternatives.",
-                name, polymerName, red, redInterpretation, ra, mlNote
+                "%s vs %s: %s, ML %d%%, Ra %.1f. %s",
+                solvent.getName(), polymer.getPolymerName(), redNote, mlPct, ra,
+                red < 1.0 && mlPct >= 50
+                        ? "Good alignment — start with a small-scale dissolution trial."
+                        : "Mixed signals — compare with higher-ranked options before committing."
         );
     }
 
@@ -69,9 +65,7 @@ public class RecommendationBriefingGenerator {
 
         if (knownHazard != null) {
             return String.format(
-                    "%s carries documented health hazards: %s. " +
-                    "Researchers handling this solvent should consult the Safety Data Sheet (SDS), use appropriate personal protective equipment (gloves, eye protection, fume hood), " +
-                    "and minimise exposure duration. For routine laboratory work, consider whether a less hazardous alternative can achieve the same dissolution outcome.",
+                    "%s — %s. Work in a fume hood with PPE; avoid routine use unless necessary.",
                     name, capitalizeFirst(knownHazard)
             );
         }
@@ -79,160 +73,101 @@ public class RecommendationBriefingGenerator {
         double toxicity = solvent.getToxicityLevel();
         if (toxicity > 10) {
             return String.format(
-                    "%s is recorded with an elevated toxicity index (%.1f) in the SolveMate catalog. " +
-                    "Higher toxicity ratings indicate greater potential for acute or chronic health effects during handling, storage, or accidental exposure. " +
-                    "Work under ventilated conditions, restrict quantities to what the experiment requires, and ensure waste is collected in labelled hazardous-waste containers rather than general drains.",
-                    name, toxicity
+                    "Elevated toxicity index (%.1f). Use ventilated conditions, minimise quantity, and collect waste as hazardous.",
+                    toxicity
             );
         }
-
         if (toxicity > 0) {
             return String.format(
-                    "%s has a moderate toxicity rating (%.1f) in the catalog. " +
-                    "Under normal laboratory conditions with standard PPE and fume-cupboard use, routine handling poses manageable risk. " +
-                    "Avoid skin contact and inhalation of vapours, especially during heating or agitation when evaporation increases airborne exposure.",
-                    name, toxicity
+                    "Moderate toxicity (%.1f). Standard PPE and fume-cupboard work are sufficient for routine handling.",
+                    toxicity
             );
         }
 
         return String.format(
-                "%s does not have a specific toxicity classification in the SolveMate catalog, which typically indicates no widely documented severe acute hazard — but this does not replace the Safety Data Sheet. " +
-                "All solvents should be handled with standard laboratory safety practices: nitrile gloves, eye protection, and work in a ventilated fume hood. " +
-                "Never assume a solvent is harmless without reviewing its SDS for flash point, vapour pressure, and chronic exposure limits.",
-                name
+                "No severe hazard flagged in catalog — still check the SDS for flash point and exposure limits before use."
         );
     }
 
     private String environmentalSection(Solvent solvent) {
-        String name = solvent.getName();
         String env = solvent.getEnvImpactScore() == null ? "MEDIUM" : solvent.getEnvImpactScore().toUpperCase();
 
         return switch (env) {
             case "LOW" -> String.format(
-                    "%s is classified as low environmental impact in the SolveMate catalog. " +
-                    "Low-impact solvents are generally more biodegradable, less persistent in water and soil, and produce fewer harmful by-products during disposal. " +
-                    "This makes them preferable for laboratories aiming to reduce ecological footprint. " +
-                    "Still collect waste in appropriate solvent-recovery containers — even low-impact solvents should not be poured down drains.",
-                    name
+                    "Low environmental impact — preferable for green labs. Collect waste in solvent-recovery containers, not drains."
             );
             case "HIGH" -> String.format(
-                    "%s has a high environmental impact rating. Solvents in this category are often poorly biodegradable, may persist in soil and water after disposal, and can contribute to long-term environmental contamination if not managed through licensed hazardous-waste channels. " +
-                    "If your laboratory has sustainability targets or green chemistry policies, this solvent should be used only when safer alternatives cannot achieve the required dissolution, and quantities should be minimised.",
-                    name
+                    "High impact — poorly biodegradable and may persist after disposal. Minimise use and route waste through licensed hazardous-waste channels."
             );
             default -> String.format(
-                    "%s has a moderate environmental impact rating. It is neither among the cleanest nor the most problematic solvents in the catalog. " +
-                    "Moderate-impact solvents require standard waste segregation and should be compared against lower-impact alternatives before scaling up any process. " +
-                    "Document solvent usage volumes in your lab records to support future substitution decisions.",
-                    name
+                    "Moderate impact — acceptable for small trials; compare lower-impact alternatives before scaling up."
             );
         };
     }
 
     private String regulatorySection(Solvent solvent) {
-        String name = solvent.getName();
-
         if (solvent.isEuBanStatus()) {
             return String.format(
-                    "%s is flagged as subject to European Union regulatory restrictions in the SolveMate catalog. " +
-                    "Restricted solvents may appear on REACH candidate lists, SVHC (Substances of Very High Concern) registers, or national ban schedules because of carcinogenic, reprotoxic, or persistent environmental properties. " +
-                    "Using this solvent may require additional risk assessments, exposure monitoring, substitution analysis, and documented justification for continued use. " +
-                    "Check your institution's chemical approval process before ordering or using this material.",
-                    name
+                    "%s is EU-restricted. Confirm institutional approval, exposure controls, and substitution justification before ordering.",
+                    solvent.getName()
             );
         }
-
-        return String.format(
-                "%s is not flagged with EU ban or restriction status in the SolveMate catalog, indicating no current entry on major European restriction lists used by this system. " +
-                "Regulatory status can change — verify against the latest REACH and national chemical inventories before long-term adoption. " +
-                "Maintaining an approved-chemicals list in your laboratory management system helps ensure compliance during audits and safety inspections.",
-                name
-        );
+        return "No EU restriction flagged — verify current REACH status before long-term adoption.";
     }
 
-    private String costSection(Solvent solvent) {
+    private String practicalitySection(Solvent solvent, double red, String type) {
         String name = solvent.getName();
-        double cost = solvent.getCostPerLiter();
 
-        if (cost <= 0) {
+        if ("NOT_RECOMMENDED".equals(type)) {
+            return "Not suited for routine lab work with this polymer — use a top-ranked match to save trial time and material.";
+        }
+        if (red < 1.0) {
             return String.format(
-                    "Cost data for %s is not available in the catalog. Before committing to a process, obtain a supplier quote and factor in purity grade, shipping, and minimum order quantities — specialty solvents can significantly affect project budgets.",
+                    "%s is a practical first choice — start with a small room-temp trial (10–50 mL) and confirm purity grade (ACS/HPLC) matches your protocol.",
                     name
             );
         }
-
-        if (cost < 12) {
+        if (red < 1.5) {
             return String.format(
-                    "%s is economically favourable at approximately $%.2f per litre. " +
-                    "Low-cost solvents reduce per-experiment material expense, which matters when running screening studies or teaching laboratories with limited budgets. " +
-                    "Confirm that the supplier purity grade (e.g. ACS, HPLC) meets your experimental requirements — cheaper grades may contain impurities that affect dissolution results.",
-                    name, cost
+                    "%s may need longer contact time or higher temperature — allow extra trial time before scaling up.",
+                    name
             );
         }
-
-        if (cost < 25) {
-            return String.format(
-                    "%s costs approximately $%.2f per litre — a moderate price point typical of common laboratory solvents. " +
-                    "For routine compatibility trials using small volumes (10–50 mL), cost is unlikely to be a limiting factor. " +
-                    "For scale-up or continuous processes, calculate total solvent consumption including recovery losses before finalising this choice.",
-                    name, cost
-            );
-        }
-
-        return String.format(
-                "%s is relatively expensive at approximately $%.2f per litre. " +
-                "High-cost solvents increase the economic burden of screening, scale-up, and waste disposal. " +
-                "If a lower-cost alternative from the recommended list achieves similar RED and ML scores, it may deliver the same laboratory outcome at lower total cost. " +
-                "Order only the quantity needed for immediate experiments to avoid stock expiry and capital tied up in inventory.",
-                name, cost
-        );
+        return "Lower-priority option — only try if higher-ranked solvents fail in trial.";
     }
 
     private String overallSection(Polymer polymer, Solvent solvent,
                                   double probability, double red, String type, int rank) {
         String name = solvent.getName();
         String polymerName = polymer.getPolymerName();
+        int mlPct = (int) Math.round(probability * 100);
 
         if ("NOT_RECOMMENDED".equals(type)) {
             return String.format(
-                    "%s is not recommended for use with %s. It ranked among the lowest-scoring solvents in the full catalog analysis, with a RED index of %.2f and ML confidence of %d%%. " +
-                    "Selecting this solvent risks failed dissolution, wasted polymer material, and unnecessary exposure to any associated health or environmental hazards. " +
-                    "Choose a solvent from the Top 10 Recommended list instead.",
-                    name, polymerName, red, (int) Math.round(probability * 100)
+                    "Avoid %s for %s (RED %.2f, ML %d%%) — pick from the Top 10 instead.",
+                    name, polymerName, red, mlPct
             );
         }
 
-        boolean redOk = red < 1.0;
-        boolean mlOk  = probability >= 0.5;
-        boolean rankTop3 = rank <= 3;
-
-        if (redOk && mlOk && rankTop3) {
+        if (red < 1.0 && probability >= 0.5 && rank <= 3) {
             return String.format(
-                    "%s is strongly recommended as rank #%d for %s. It combines favourable Hansen compatibility (RED = %.2f), solid ML confidence (%d%%), and a practical profile for laboratory use. " +
-                    "This is a suitable primary candidate for your first dissolution trial — start with a small-scale test at room temperature, record observations in SolveMate Trials, and adjust concentration or temperature based on results.",
-                    name, rank, polymerName, red, (int) Math.round(probability * 100)
+                    "Strong pick (#%d): %s + %s. Run a small room-temp trial first.",
+                    rank, name, polymerName
             );
         }
-
-        if (redOk && mlOk) {
+        if (red < 1.0 && probability >= 0.5) {
             return String.format(
-                    "%s is recommended (rank #%d) for %s with acceptable compatibility indicators (RED = %.2f, ML = %d%%). " +
-                    "It provides a viable option for laboratory trials, though higher-ranked solvents on this list may offer slightly better parameter alignment. " +
-                    "Proceed with a controlled trial and compare results against the top-ranked alternatives if initial dissolution is incomplete.",
-                    name, rank, polymerName, red, (int) Math.round(probability * 100)
+                    "Viable option (#%d) for %s — trial recommended; higher ranks may perform slightly better.",
+                    rank, polymerName
             );
         }
-
         return String.format(
-                "%s appears at rank #%d but shows mixed compatibility signals for %s (RED = %.2f, ML = %d%%). " +
-                "It may work under specific conditions (elevated temperature, higher concentration, extended contact time) but is not a first-choice solvent. " +
-                "Prioritise higher-ranked options with RED below 1.0 before investing significant lab time in this pairing.",
-                name, rank, polymerName, red, (int) Math.round(probability * 100)
+                "Mixed fit (#%d) for %s — only try if top options fail; may need higher temp or concentration.",
+                rank, polymerName
         );
     }
 
-    private String saferAlternativeSection(Solvent current, Solvent alternative,
-                                           double probability, String type) {
+    private String saferAlternativeSection(Solvent current, Solvent alternative, String type) {
         if (!"RECOMMENDED".equals(type) || alternative == null) {
             return null;
         }
@@ -240,41 +175,9 @@ public class RecommendationBriefingGenerator {
             return null;
         }
 
-        boolean currentHighEnv = "HIGH".equalsIgnoreCase(current.getEnvImpactScore());
-        boolean altBetterEnv   = "LOW".equalsIgnoreCase(alternative.getEnvImpactScore())
-                || ("MEDIUM".equalsIgnoreCase(alternative.getEnvImpactScore()) && currentHighEnv);
-        boolean currentEuBan   = current.isEuBanStatus();
-        boolean currentExpensive = current.getCostPerLiter() > 20;
-
-        if (!currentEuBan && !currentHighEnv && !currentExpensive) {
-            return String.format(
-                    "%s already presents a relatively balanced profile among recommended options. " +
-                    "If you wish to explore alternatives, review other entries in the Top 10 list with similar ML scores and compare their RED indices side by side.",
-                    current.getName()
-            );
-        }
-
-        StringBuilder reason = new StringBuilder();
-        if (currentEuBan) reason.append("avoiding EU regulatory restrictions");
-        if (currentHighEnv) {
-            if (reason.length() > 0) reason.append(" and ");
-            reason.append("reducing environmental impact");
-        }
-        if (currentExpensive) {
-            if (reason.length() > 0) reason.append(" and ");
-            reason.append("lowering material cost");
-        }
-
         return String.format(
-                "Consider %s as a safer alternative to %s when %s. " +
-                "%s is also recommended for this polymer and offers a %s environmental rating%s. " +
-                "Run a parallel small-scale trial comparing both solvents to confirm dissolution quality before committing to either for larger experiments.",
-                alternative.getName(),
-                current.getName(),
-                reason,
-                alternative.getName(),
-                alternative.getEnvImpactScore() != null ? alternative.getEnvImpactScore().toLowerCase() : "favourable",
-                alternative.isEuBanStatus() ? "" : " with no EU restriction flag"
+                "Consider %s — better safety/sustainability profile with similar compatibility. Run a parallel trial to compare.",
+                alternative.getName()
         );
     }
 

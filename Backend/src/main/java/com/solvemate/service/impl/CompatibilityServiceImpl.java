@@ -331,8 +331,7 @@ public class CompatibilityServiceImpl implements CompatibilityService {
         if (pool == null) return null;
 
         boolean needsAlt = current.isEuBanStatus()
-                || "HIGH".equalsIgnoreCase(current.getEnvImpactScore())
-                || current.getCostPerLiter() > 20;
+                || "HIGH".equalsIgnoreCase(current.getEnvImpactScore());
         if (!needsAlt) return null;
 
         Solvent best = null;

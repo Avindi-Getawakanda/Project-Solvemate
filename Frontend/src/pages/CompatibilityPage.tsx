@@ -40,7 +40,7 @@ const BRIEFING_SECTIONS: { key: keyof NonNullable<CompatibilityResult["briefing"
     { key: "healthSafetyAssessment",         title: "Health & Safety Assessment" },
     { key: "environmentalImpactAssessment",  title: "Environmental Impact Assessment" },
     { key: "regulatoryComplianceAssessment", title: "Regulatory & Compliance Assessment" },
-    { key: "costPracticalityAssessment",     title: "Cost & Practicality Assessment" },
+    { key: "costPracticalityAssessment",     title: "Practicality Assessment" },
 ];
 
 const BRIEFING_TAIL: { key: keyof NonNullable<CompatibilityResult["briefing"]>; title: string }[] = [
@@ -114,16 +114,13 @@ function ResultCard({ r, variant, expanded, onToggle }: ResultCardProps) {
 
                 {(hasBriefing || r.explanation) && (
                     <button className="explain-btn" onClick={() => onToggle(isExp ? -1 : key)}>
-                        {isExp ? "Hide Expert Briefing" : "View Expert Briefing"}
+                        {isExp ? "Hide Briefing" : "View Briefing"}
                     </button>
                 )}
 
                 {isExp && hasBriefing && (
                     <div className="briefing-panel">
-                        <p className="briefing-panel-title">Laboratory Decision Briefing — <strong>{r.solventName}</strong></p>
-                        <p className="briefing-panel-subtitle">
-                            Expert assessment explaining why this solvent was ranked here and what it means for your laboratory work.
-                        </p>
+                        <p className="briefing-panel-title">Briefing — <strong>{r.solventName}</strong></p>
                         <div className="briefing-sections">
                             {BRIEFING_SECTIONS.map(({ key: sectionKey, title }) => {
                                 const text = briefing?.[sectionKey];
@@ -309,7 +306,10 @@ export default function CompatibilityPage() {
                     )}
 
                     <label className="green-mode-toggle">
-                        <span className="green-mode-label">🌱 Green Mode</span>
+                        <span className="green-mode-label">
+                            <span className="green-mode-icon" aria-hidden="true">🌱</span>
+                            Green Mode
+                        </span>
                         <span className="toggle-switch">
                             <input type="checkbox" checked={greenMode}
                                 onChange={e => setGreenMode(e.target.checked)} />

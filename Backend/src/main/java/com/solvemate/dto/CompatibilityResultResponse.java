@@ -18,6 +18,11 @@ public class CompatibilityResultResponse {
     private String recommendationType;
     private int    solventsAnalysed;
     private List<ShapExplanation> explanation;
+    private double greenScore;
+    private String envImpactScore;
+    private boolean euBanStatus;
+    private String greenInsight;
+    private RecommendationBriefing briefing;
 
     public static class ShapExplanation {
         private String feature;
@@ -57,6 +62,11 @@ public class CompatibilityResultResponse {
     public String getRecommendationType()              { return recommendationType; }
     public int    getSolventsAnalysed()                { return solventsAnalysed; }
     public List<ShapExplanation> getExplanation()      { return explanation; }
+    public double  getGreenScore()                     { return greenScore; }
+    public String  getEnvImpactScore()                 { return envImpactScore; }
+    public boolean getEuBanStatus()                     { return euBanStatus; }
+    public String  getGreenInsight()                    { return greenInsight; }
+    public RecommendationBriefing getBriefing()         { return briefing; }
 
     public void setResultId(Long v)                    { this.resultId = v; }
     public void setPolymerId(Long v)                   { this.polymerId = v; }
@@ -72,4 +82,9 @@ public class CompatibilityResultResponse {
     public void setRecommendationType(String v)        { this.recommendationType = v; }
     public void setSolventsAnalysed(int v)             { this.solventsAnalysed = v; }
     public void setExplanation(List<ShapExplanation> v){ this.explanation = v; }
+    public void setGreenScore(double v)                { this.greenScore = v; }
+    public void setEnvImpactScore(String v)            { this.envImpactScore = v; }
+    public void setEuBanStatus(boolean v)               { this.euBanStatus = v; }
+    public void setGreenInsight(String v)               { this.greenInsight = v; }
+    public void setBriefing(RecommendationBriefing v)   { this.briefing = v; }
 }

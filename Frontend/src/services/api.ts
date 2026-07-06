@@ -21,7 +21,16 @@ export interface PolymerResponse { polymerId: number; polymerName: string; polym
 export interface SolventData { name: string; chemicalFormula?: string; deltaD: number; deltaP: number; deltaH: number; molarVolume?: number; costPerLiter?: number; envImpactScore: string; toxicityLevel?: number; euBanStatus?: boolean; }
 export interface SolventResponse { solventId: number; name: string; chemicalFormula: string; deltaD: number; deltaP: number; deltaH: number; molarVolume: number; deltaT: number; costPerLiter: number; envImpactScore: string; toxicityLevel: number; euBanStatus: boolean; }
 export interface ShapExplanation { feature: string; label: string; shapValue: number; contribution: number; plainEnglish?: string; }
-export interface CompatibilityResult { resultId?: number; polymerId: number; polymerName: string; solventId: number; solventName: string; deltaDDifference?: number; deltaPDifference?: number; deltaHDifference?: number; raValue?: number; redValue?: number; mlProbability: number; compatibilityScore: number; rankPosition: number; result: string; recommendationType?: string; solventsAnalysed?: number; explanation?: ShapExplanation[]; }
+export interface RecommendationBriefing {
+  compatibilityAssessment: string;
+  healthSafetyAssessment: string;
+  environmentalImpactAssessment: string;
+  regulatoryComplianceAssessment: string;
+  costPracticalityAssessment: string;
+  overallRecommendation: string;
+  saferAlternative?: string | null;
+}
+export interface CompatibilityResult { resultId?: number; polymerId: number; polymerName: string; solventId: number; solventName: string; deltaDDifference?: number; deltaPDifference?: number; deltaHDifference?: number; raValue?: number; redValue?: number; mlProbability: number; compatibilityScore: number; rankPosition: number; result: string; recommendationType?: string; solventsAnalysed?: number; explanation?: ShapExplanation[]; greenScore?: number; envImpactScore?: string; euBanStatus?: boolean; greenInsight?: string; briefing?: RecommendationBriefing; }
 
 export interface AnalysisSummary {
   solventsAnalysed: number;
@@ -31,6 +40,8 @@ export interface AnalysisSummary {
   redCompatibleCount: number;
   topProbability: number;
   medianProbability: number;
+  greenModeActive: boolean;
+  averageGreenScore: number;
 }
 
 export interface CompatibilityAnalysis {
@@ -68,8 +79,8 @@ export const addSolvent = (data: SolventData): Promise<SolventResponse> => apiFe
 export const updateSolvent = (id: number, data: SolventData): Promise<SolventResponse> => apiFetch(`${SOLVENTS_URL}/${id}`, { method: "PUT", body: JSON.stringify(data) });
 export const deleteSolvent = (id: number) => apiFetch(`${SOLVENTS_URL}/${id}`, { method: "DELETE" });
 
-export const runCompatibilityAnalysis = (polymerId: number): Promise<CompatibilityAnalysis> =>
-    apiFetch(`${COMPAT_URL}/recommend/${polymerId}`, { method: "POST" });
+export const runCompatibilityAnalysis = (polymerId: number, greenMode = false): Promise<CompatibilityAnalysis> =>
+    apiFetch(`${COMPAT_URL}/recommend/${polymerId}?green=${greenMode}`, { method: "POST" });
 
 /** @deprecated use runCompatibilityAnalysis */
 export const recommendTop5 = runCompatibilityAnalysis;

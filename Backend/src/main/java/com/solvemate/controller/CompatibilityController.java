@@ -21,8 +21,9 @@ public class CompatibilityController {
 
     @PostMapping("/recommend/{polymerId}")
     public ResponseEntity<CompatibilityAnalysisResponse> recommend(
-            @PathVariable Long polymerId) {
-        return ResponseEntity.ok(compatibilityService.analyze(polymerId));
+            @PathVariable Long polymerId,
+            @RequestParam(name = "green", defaultValue = "false") boolean greenMode) {
+        return ResponseEntity.ok(compatibilityService.analyze(polymerId, greenMode));
     }
 
     @GetMapping("/results/{polymerId}")

@@ -24,9 +24,29 @@ function badge(result: string) {
     return                              { label: "Not Compatible", cls: "compat-incompatible" };
 }
 
+function greenTier(score?: number) {
+    if (score == null) return null;
+    if (score >= 0.7) return { label: "Green", cls: "green-tier-high" };
+    if (score >= 0.4) return { label: "Moderate", cls: "green-tier-mid" };
+    return { label: "Low Green Score", cls: "green-tier-low" };
+}
+
 function resultKey(r: CompatibilityResult) {
     return r.resultId ?? r.solventId;
 }
+
+const BRIEFING_SECTIONS: { key: keyof NonNullable<CompatibilityResult["briefing"]>; title: string }[] = [
+    { key: "compatibilityAssessment",        title: "Compatibility Assessment" },
+    { key: "healthSafetyAssessment",         title: "Health & Safety Assessment" },
+    { key: "environmentalImpactAssessment",  title: "Environmental Impact Assessment" },
+    { key: "regulatoryComplianceAssessment", title: "Regulatory & Compliance Assessment" },
+    { key: "costPracticalityAssessment",     title: "Cost & Practicality Assessment" },
+];
+
+const BRIEFING_TAIL: { key: keyof NonNullable<CompatibilityResult["briefing"]>; title: string }[] = [
+    { key: "overallRecommendation", title: "Overall Recommendation" },
+    { key: "saferAlternative",      title: "Safer Alternative" },
+];
 
 interface ResultCardProps {
     r: CompatibilityResult;
@@ -39,6 +59,10 @@ function ResultCard({ r, variant, expanded, onToggle }: ResultCardProps) {
     const b = badge(r.result);
     const key = resultKey(r);
     const isExp = expanded === key;
+    const green = greenTier(r.greenScore);
+    const briefing = r.briefing;
+    const preview = briefing?.overallRecommendation ?? r.greenInsight;
+    const hasBriefing = Boolean(briefing);
 
     return (
         <div className={`result-card ${variant} ${r.rankPosition === 1 && variant === "recommended" ? "rank-1" : ""}`}>
@@ -49,6 +73,8 @@ function ResultCard({ r, variant, expanded, onToggle }: ResultCardProps) {
                 <div className="result-name-row">
                     <h3>{r.solventName}</h3>
                     <span className={`compat-badge ${b.cls}`}>{b.label}</span>
+                    {green && <span className={`green-badge ${green.cls}`}>🌱 {green.label}</span>}
+                    {r.euBanStatus && <span className="eu-ban-badge">⚠ EU Restricted</span>}
                 </div>
 
                 <div className="result-metrics">
@@ -66,7 +92,17 @@ function ResultCard({ r, variant, expanded, onToggle }: ResultCardProps) {
                         <span>Ra Distance</span>
                         <strong>{r.raValue != null ? r.raValue.toFixed(1) : "—"}</strong>
                     </div>
+                    {r.greenScore != null && (
+                        <div className="metric-chip">
+                            <span>Green Score</span>
+                            <strong>{Math.round(r.greenScore * 100)}%</strong>
+                        </div>
+                    )}
                 </div>
+
+                {preview && (
+                    <p className="briefing-preview-line">{preview}</p>
+                )}
 
                 <div className="score-bar-wrap">
                     <span className="score-label">Relative score</span>
@@ -76,13 +112,68 @@ function ResultCard({ r, variant, expanded, onToggle }: ResultCardProps) {
                     <span className="score-val">{pct(r.mlProbability)}%</span>
                 </div>
 
-                {r.explanation && (
+                {(hasBriefing || r.explanation) && (
                     <button className="explain-btn" onClick={() => onToggle(isExp ? -1 : key)}>
-                        {isExp ? "Hide Explanation" : "View Explanation"}
+                        {isExp ? "Hide Expert Briefing" : "View Expert Briefing"}
                     </button>
                 )}
 
-                {isExp && r.explanation && (
+                {isExp && hasBriefing && (
+                    <div className="briefing-panel">
+                        <p className="briefing-panel-title">Laboratory Decision Briefing — <strong>{r.solventName}</strong></p>
+                        <p className="briefing-panel-subtitle">
+                            Expert assessment explaining why this solvent was ranked here and what it means for your laboratory work.
+                        </p>
+                        <div className="briefing-sections">
+                            {BRIEFING_SECTIONS.map(({ key: sectionKey, title }) => {
+                                const text = briefing?.[sectionKey];
+                                if (!text) return null;
+                                return (
+                                    <article key={sectionKey} className="briefing-section">
+                                        <h4 className="briefing-section-title">{title}</h4>
+                                        <p className="briefing-section-text">{text}</p>
+                                    </article>
+                                );
+                            })}
+                            {BRIEFING_TAIL.map(({ key: sectionKey, title }) => {
+                                const text = briefing?.[sectionKey];
+                                if (!text) return null;
+                                return (
+                                    <article key={sectionKey} className={`briefing-section ${sectionKey === "overallRecommendation" ? "briefing-section-overall" : "briefing-section-safer"}`}>
+                                        <h4 className="briefing-section-title">{title}</h4>
+                                        <p className="briefing-section-text">{text}</p>
+                                    </article>
+                                );
+                            })}
+                        </div>
+
+                        {r.explanation && r.explanation.length > 0 && (
+                            <div className="shap-panel shap-panel-nested">
+                                <p className="shap-title">ML Feature Analysis</p>
+                                <p className="shap-subtitle">How individual Hansen parameters contributed to the model ranking</p>
+                                <div className="shap-cards">
+                                    {r.explanation.map((e, i) => (
+                                        <div key={i} className={`shap-card ${e.shapValue > 0 ? "shap-positive" : "shap-negative"}`}>
+                                            <div className="shap-card-header">
+                                                <span className="shap-card-label">{e.label}</span>
+                                                <span className="shap-card-pct">{e.contribution.toFixed(1)}%</span>
+                                            </div>
+                                            <div className="shap-bar-track">
+                                                <div className="shap-bar-fill" style={{
+                                                    width: `${Math.min(e.contribution, 100)}%`,
+                                                    background: e.shapValue > 0 ? "var(--color-primary)" : "var(--color-danger)"
+                                                }} />
+                                            </div>
+                                            {e.plainEnglish && <p className="shap-card-text">{e.plainEnglish}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {isExp && !hasBriefing && r.explanation && (
                     <div className="shap-panel">
                         <p className="shap-title">Why <strong>{r.solventName}</strong> was ranked here</p>
                         <div className="shap-cards">
@@ -121,6 +212,7 @@ export default function CompatibilityPage() {
     const [ran, setRan]                       = useState(false);
     const [expanded, setExpanded]             = useState<number | null>(null);
     const [polymerSearch, setPolymerSearch]   = useState("");
+    const [greenMode, setGreenMode]           = useState(false);
 
     useEffect(() => {
         Promise.all([getAllPolymers(), getDashboardStats()])
@@ -142,7 +234,7 @@ export default function CompatibilityPage() {
         if (!selectedId) { setError("Please select a polymer first"); return; }
         setError(""); setLoading(true); setRan(false); setExpanded(null); setAnalysis(null);
         try {
-            const data = await runCompatibilityAnalysis(selectedId);
+            const data = await runCompatibilityAnalysis(selectedId, greenMode);
             setAnalysis(data); setRan(true);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Analysis failed");
@@ -216,6 +308,20 @@ export default function CompatibilityPage() {
                         </div>
                     )}
 
+                    <label className="green-mode-toggle">
+                        <span className="green-mode-label">🌱 Green Mode</span>
+                        <span className="toggle-switch">
+                            <input type="checkbox" checked={greenMode}
+                                onChange={e => setGreenMode(e.target.checked)} />
+                            <span className="toggle-track"><span className="toggle-thumb" /></span>
+                        </span>
+                    </label>
+                    {greenMode && (
+                        <p className="green-mode-hint">
+                            Ranks by ML confidence and sustainability together — deprioritises toxic or EU-restricted solvents even if compatibility is high.
+                        </p>
+                    )}
+
                     <button className="btn-run" onClick={handleRun} disabled={!selectedId || loading}>
                         {loading ? "Running…" : "Run Analysis"}
                     </button>
@@ -250,18 +356,20 @@ export default function CompatibilityPage() {
                         <div className="results-section">
                             <div className="analysis-summary-banner">
                                 <div className="summary-main">
-                                    <h3>Analysis Summary</h3>
+                                    <h3>Analysis Summary {summary.greenModeActive && <span className="green-mode-active-tag">🌱 Green Mode</span>}</h3>
                                     <p>
                                         Evaluated <strong>{summary.solventsAnalysed}</strong> solvents for{" "}
                                         <strong>{selectedPolymer?.polymerName}</strong>.
                                         {" "}{summary.highConfidenceCount} scored above 70% ML confidence.
                                         {" "}{summary.redCompatibleCount} passed the Hansen RED threshold (RED &lt; 1.0).
+                                        {summary.greenModeActive && <> Results are ranked by combined ML confidence and sustainability score.</>}
                                     </p>
                                 </div>
                                 <div className="summary-stats">
                                     <div><span>Top score</span><strong>{pct(summary.topProbability)}%</strong></div>
                                     <div><span>Median</span><strong>{pct(summary.medianProbability)}%</strong></div>
                                     <div><span>RED-pass</span><strong>{summary.redCompatibleCount}</strong></div>
+                                    {summary.greenModeActive && <div><span>Avg Green Score</span><strong>{Math.round(summary.averageGreenScore * 100)}%</strong></div>}
                                 </div>
                             </div>
 

@@ -5,6 +5,6 @@ import com.solvemate.dto.CompatibilityResultResponse;
 import java.util.List;
 
 public interface CompatibilityService {
-    CompatibilityAnalysisResponse analyze(Long polymerId);
+    CompatibilityAnalysisResponse analyze(Long polymerId, boolean greenMode);
     List<CompatibilityResultResponse> getResultsForPolymer(Long polymerId);
 }

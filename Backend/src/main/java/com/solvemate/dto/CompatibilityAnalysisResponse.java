@@ -16,6 +16,8 @@ public class CompatibilityAnalysisResponse {
         private int    redCompatibleCount;
         private double topProbability;
         private double medianProbability;
+        private boolean greenModeActive;
+        private double averageGreenScore;
 
         public AnalysisSummary() {}
 
@@ -26,6 +28,8 @@ public class CompatibilityAnalysisResponse {
         public int    getRedCompatibleCount()   { return redCompatibleCount; }
         public double getTopProbability()     { return topProbability; }
         public double getMedianProbability()  { return medianProbability; }
+        public boolean getGreenModeActive()   { return greenModeActive; }
+        public double getAverageGreenScore()  { return averageGreenScore; }
 
         public void setSolventsAnalysed(int v)     { this.solventsAnalysed = v; }
         public void setHighConfidenceCount(int v)  { this.highConfidenceCount = v; }
@@ -34,6 +38,8 @@ public class CompatibilityAnalysisResponse {
         public void setRedCompatibleCount(int v)   { this.redCompatibleCount = v; }
         public void setTopProbability(double v)    { this.topProbability = v; }
         public void setMedianProbability(double v) { this.medianProbability = v; }
+        public void setGreenModeActive(boolean v)  { this.greenModeActive = v; }
+        public void setAverageGreenScore(double v) { this.averageGreenScore = v; }
     }
 
     public CompatibilityAnalysisResponse() {}

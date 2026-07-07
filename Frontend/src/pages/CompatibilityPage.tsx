@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import type { PolymerResponse, CompatibilityResult, CompatibilityAnalysis, DashboardStats } from "../services/api";
 import { getAllPolymers, runCompatibilityAnalysis, getDashboardStats } from "../services/api";
+import AiAssistantChat from "../components/AiAssistantChat";
 import "../styles/compatibility.css";
 
 const LOADING_STEPS = [
@@ -398,6 +399,13 @@ export default function CompatibilityPage() {
                                     ))}
                                 </div>
                             </section>
+
+                            {selectedPolymer && (
+                                <AiAssistantChat
+                                    polymerId={selectedPolymer.polymerId}
+                                    polymerName={selectedPolymer.polymerName}
+                                />
+                            )}
                         </div>
                     )}
                 </main>

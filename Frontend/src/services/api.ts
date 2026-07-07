@@ -4,6 +4,7 @@ const USERS_URL    = `${BASE}/users`;
 const POLYMERS_URL = `${BASE}/polymers`;
 const SOLVENTS_URL = `${BASE}/solvents`;
 const COMPAT_URL   = `${BASE}/compatibility`;
+const AI_URL       = `${BASE}/ai`;
 const DASHBOARD_URL = `${BASE}/dashboard`;
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
@@ -122,6 +123,14 @@ export interface ReportResponse {
   euComplianceStatus: string;
   finalDecision: string;
 }
+
+export interface AiChatResponse {
+  answer: string;
+}
+
+export const askAiAssistant = (polymerId: number, question: string): Promise<AiChatResponse> =>
+    apiFetch(`${AI_URL}/ask`, { method: "POST", body: JSON.stringify({ polymerId, question }) });
+
 
 export const getAllTrials = (): Promise<TrialResponse[]> =>
     apiFetch(`${BASE}/trials`);

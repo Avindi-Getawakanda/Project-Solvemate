@@ -23,7 +23,7 @@ export default function Register() {
       setLoading(true);
       const result = await registerUser({ fullName, email, password, role }) as { message: string };
       setSuccess(result.message || "Registration successful");
-      setTimeout(() => navigate("/"), 1000);
+      setTimeout(() => navigate("/login"), 1000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally { setLoading(false); }
@@ -48,7 +48,7 @@ export default function Register() {
           <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
           <input type="password" placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
           <button onClick={handleRegister} disabled={loading}>{loading ? "Registering..." : "Register"}</button>
-          <p>Already have an account? <Link to="/">Login</Link></p>
+          <p>Already have an account? <Link to="/login">Login</Link></p>
         </div>
       </div>
   );

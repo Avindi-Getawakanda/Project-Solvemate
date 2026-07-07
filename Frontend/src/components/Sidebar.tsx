@@ -24,7 +24,7 @@ export default function Sidebar({ fullName, email, role, activePage, onNavigate 
 
     const handleLogout = async () => {
         try { await logoutUser(); } catch { /* ignore */ }
-        finally { localStorage.removeItem("user"); navigate("/"); }
+        finally { localStorage.removeItem("user"); navigate("/login"); }
     };
 
     return (

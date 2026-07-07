@@ -15,7 +15,7 @@ export default function AdminDashboard() {
 
     const handleLogout = async () => {
         try { await logoutUser(); } catch { /* ignore */ }
-        finally { localStorage.removeItem("user"); navigate("/"); }
+        finally { localStorage.removeItem("user"); navigate("/login"); }
     };
 
     const menuItems = [

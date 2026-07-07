@@ -56,7 +56,6 @@ export default function Login() {
                     {loading ? "Logging in..." : "Login"}
                 </button>
                 <p>Don&apos;t have an account? <Link to="/register">Register</Link></p>
-                <p><Link to="/">← Back to Home</Link></p>
             </div>
         </div>
     );

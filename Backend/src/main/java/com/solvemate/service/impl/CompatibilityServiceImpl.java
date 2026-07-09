@@ -35,8 +35,11 @@ public class CompatibilityServiceImpl implements CompatibilityService {
     private static final int    TOP_K            = 10;
     private static final int    BOTTOM_K         = 5;
     private static final int    SHAP_TOP_K       = 3;
-    private static final String ML_PREDICT_URL   = "http://localhost:5000/predict";
-    private static final String ML_BATCH_URL     = "http://localhost:5000/predict/batch";
+    @org.springframework.beans.factory.annotation.Value("${ml.service.url}")
+    private String mlServiceUrl;
+
+    private String mlPredictUrl() { return mlServiceUrl + "/predict"; }
+    private String mlBatchUrl()   { return mlServiceUrl + "/predict/batch"; }
 
     // Green Solvent Recommendation Engine weights
     private static final double GREEN_ML_WEIGHT    = 0.6;
@@ -382,7 +385,7 @@ public class CompatibilityServiceImpl implements CompatibilityService {
             }
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(ML_BATCH_URL))
+                    .uri(URI.create(mlBatchUrl()))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                     .build();
@@ -437,7 +440,7 @@ public class CompatibilityServiceImpl implements CompatibilityService {
             body.put("r0_polymer",           polymer.getR0());
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(ML_PREDICT_URL))
+                    .uri(URI.create(mlPredictUrl()))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                     .build();
